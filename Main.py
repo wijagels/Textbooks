@@ -49,7 +49,8 @@ def main():
     print('HDR:', r.headers)
     print('DATA:', r.data)
     cookie = http.cookies.SimpleCookie(r.headers['set-cookie'])
-    headers['Cookie']=cookie.output(attrs=[], header='').strip()
+    headers['Cookie'] = cookie.output(attrs=[], header='').strip()
+    headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.35 Safari/537.36'
     r = conn.urlopen('GET', __req_url__, headers=headers)
     print('DATA:', r.data)
     for dept in json.loads(r.data.decode("utf-8")):
@@ -74,14 +75,14 @@ def scrape_section(section):
     url = __book_url__
     urldata = __book_data2__
     urldata.update({'section_1': section['categoryId']})
-
-    datur = "storeId=19073&catalogId=10001&langId=-1&clearAll=&viewName=TBWizardView&removeSectionId=&mcEnabled=N&showCampus=false&selectTerm=Select+Term&selectDepartment=Select+Department&selectSection=Select+Section&selectCourse=Select+Course&campus1=17548069&firstTermName_17548069=SPRING+2015&firstTermId_17548069=64536529&section_1=64885913"
+    myheaders = headers
+    myheaders['content-type'] = 'application/x-www-form-urlencoded'
     #urldata = urllib3.encode_multipart_formdata(urldata)
-    pprint.pprint(urldata)
     #r = conn.request('POST', url, body=urldata, headers=headers)
-    r = requests.post(url, data=datur, headers=headers)
-    print(r.text)
+    r = requests.post(url, data=urldata, headers=myheaders)
+    #print(r.text)
     # print(grep(r.data.decode("utf-8"), "bookPrice"))
+    print(grep(r.text, "bookPrice"))
 
 
 def grep(s,pattern):
