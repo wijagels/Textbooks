@@ -60,14 +60,17 @@ def main():
 def scrape_dept(dept):
     url = __dept_url__ + '&deptId=' + dept['categoryId']
     r = conn.urlopen('GET', url, headers=headers)
-    for cl in json.loads(r.data.decode("utf-8")):
+    print("New dept!")
+    data = json.loads(r.data.decode("utf-8"))
+    for cl in data:
         scrape_class(cl)
 
 
 def scrape_class(cl):
     url = __class_url__ + '&courseId=' + cl['categoryId']
     r = conn.urlopen('GET', url, headers=headers)
-    for section in json.loads(r.data.decode("utf-8")):
+    data = json.loads(r.data.decode("utf-8"))
+    for section in data:
         scrape_section(section)
 
 
@@ -75,7 +78,7 @@ def scrape_section(section):
     url = __book_url__
     urldata = __book_data2__
     urldata.update({'section_1': section['categoryId']})
-    myheaders = headers
+    myheaders = headers.copy()
     myheaders['content-type'] = 'application/x-www-form-urlencoded'
     #urldata = urllib3.encode_multipart_formdata(urldata)
     #r = conn.request('POST', url, body=urldata, headers=headers)
