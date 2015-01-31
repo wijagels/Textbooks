@@ -36,6 +36,7 @@ import json
 import http.cookies
 import re
 import requests
+from bs4 import BeautifulSoup
 from pymongo import MongoClient
 
 
@@ -53,20 +54,20 @@ def main():
     cookie = http.cookies.SimpleCookie(r.headers['set-cookie'])
     headers['Cookie'] = cookie.output(attrs=[], header='').strip()
     headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.35 Safari/537.36'
-    r = conn.urlopen('GET', __req_url__, headers=headers) # TODO: migrate to requests
+    r = conn.urlopen('GET', __req_url__, headers=headers)  # TODO: migrate to requests
     print('DATA:', r.data)
     for dept in json.loads(r.data.decode("utf-8")):
         scrape_dept(dept)
 
 
-def renewCookie():
+def renew_cookie():
     r = conn.urlopen('GET', __base_url__)  # TODO: migrate to requests
     cookie = http.cookies.SimpleCookie(r.headers['set-cookie'])
     headers['Cookie'] = cookie.output(attrs=[], header='').strip()
 
 
 def scrape_dept(dept):
-    renewCookie() # Do this periodically so we don't get rate limited
+    renew_cookie() # Do this periodically so we don't get rate limited
     url = __dept_url__ + '&deptId=' + dept['categoryId']
     r = conn.urlopen('GET', url, headers=headers)  # TODO: migrate to requests
     print("New dept!", dept['categoryName'])
@@ -78,7 +79,7 @@ def scrape_dept(dept):
         print(headers)
         print(r.data)
         print("Damnit, something broke again")
-        renewCookie()
+        renew_cookie()
         scrape_dept(dept)
         pass
 
@@ -93,7 +94,7 @@ def scrape_class(cl, dept):
     except:
         print(r.data)
         print("Shit, something bad happened")
-        renewCookie()
+        renew_cookie()
         scrape_class(cl, dept)
         pass
 
@@ -109,20 +110,28 @@ def scrape_section(section, cl, dept):
         extract_prices(r.text, section, cl, dept)
     except:
         print("Oh noes!")
-        renewCookie()
+        renew_cookie()
         scrape_section(section, cl, dept)
         pass
 
 
 def extract_prices(html, section, cl, dept):
-    print(grep(html, "bookPrice"))
-    #print(re.finditer("span class=\"bookPrice\" title=\"(.*?)\"", html)[0])
+    # print(grep(html, "bookPrice"))
+    # print(re.finditer("span class=\"bookPrice\" title=\"(.*?)\"", html)[0])
+    soup = BeautifulSoup(html)
+    for el in soup.find_all("div", class_='book_details'):
+        li = el.find_all("li", class_='selectableBook')
+        # print(li)
+        for price in li:
+            if li.string == "BUY USED":
+                print("hey sup")
+            price = li[0].find("span", class_='bookPrice')[0]['title']
     book = {
         'Department': dept['categoryName'],
         'Class': cl['categoryName'],
         'Section': section['categoryName'],
         'Price': {
-            'RentUsed': '',
+            'RentUsed': price,
             'RentNew': '',
             'BuyUsed': '',
             'BuyNew': ''
