@@ -38,6 +38,8 @@ import http.cookies
 import re
 import pprint
 import requests
+from time import sleep
+
 
 headers = {'content-type': 'application/json'}
 conn = urllib3.PoolManager()
@@ -57,21 +59,43 @@ def main():
         scrape_dept(dept)
 
 
+def renewCookie():
+    r = conn.urlopen('GET', __base_url__)
+    cookie = http.cookies.SimpleCookie(r.headers['set-cookie'])
+    headers['Cookie'] = cookie.output(attrs=[], header='').strip()
+
+
 def scrape_dept(dept):
+    renewCookie() # Do this periodically so we don't get rate limited
     url = __dept_url__ + '&deptId=' + dept['categoryId']
     r = conn.urlopen('GET', url, headers=headers)
-    print("New dept!")
-    data = json.loads(r.data.decode("utf-8"))
-    for cl in data:
-        scrape_class(cl)
+    print("New dept!", dept['categoryName'])
+    try:
+        data = json.loads(r.data.decode("utf-8"))
+        for cl in data:
+            scrape_class(cl)
+    except:
+        print(headers)
+        print(r.data)
+        print("Damnit, something broke again")
+        renewCookie()
+        scrape_dept(dept)
+        pass
 
 
 def scrape_class(cl):
     url = __class_url__ + '&courseId=' + cl['categoryId']
     r = conn.urlopen('GET', url, headers=headers)
-    data = json.loads(r.data.decode("utf-8"))
-    for section in data:
-        scrape_section(section)
+    try:
+        data = json.loads(r.data.decode("utf-8"))
+        for section in data:
+            scrape_section(section)
+    except:
+        print(r.data)
+        print("Shit, something bad happened")
+        renewCookie()
+        scrape_class(cl)
+        pass
 
 
 def scrape_section(section):
@@ -82,11 +106,20 @@ def scrape_section(section):
     myheaders['content-type'] = 'application/x-www-form-urlencoded'
     #urldata = urllib3.encode_multipart_formdata(urldata)
     #r = conn.request('POST', url, body=urldata, headers=headers)
-    r = requests.post(url, data=urldata, headers=myheaders)
-    #print(r.text)
-    # print(grep(r.data.decode("utf-8"), "bookPrice"))
-    print(grep(r.text, "bookPrice"))
+    try:
+        r = requests.post(url, data=urldata, headers=myheaders, timeout=10)
+        #print(r.text)
+        # print(grep(r.data.decode("utf-8"), "bookPrice"))
+        #print(grep(r.text, "bookPrice"))
+    except:
+        print("Oh noes!")
+        renewCookie()
+        scrape_section(section)
+        pass
 
+
+def extractPrices():
+    return # TODO: make this dump stuff into mongodb
 
 def grep(s,pattern):
     return '\n'.join(re.findall(r'^.*%s.*?$'%pattern,s,flags=re.M))
