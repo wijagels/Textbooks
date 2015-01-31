@@ -1,13 +1,13 @@
 __author__ = 'William Jagels'
 
-__base_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/TBWizardView?catalogId=10001&langId=-1&storeId=19073'
-__req_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/TextBookProcessDropdownsCmd?campusId=17548069&termId=64536529&deptId=&courseId=&sectionId=&storeId=19073&catalogId=10001&langId=-1&dropdown=term'
-__dept_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/TextBookProcessDropdownsCmd?campusId=17548069&termId=64536529&courseId=&sectionId=&storeId=19073&catalogId=10001&langId=-1&dropdown=dept'
-__class_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/TextBookProcessDropdownsCmd?campusId=17548069&termId=64536529&deptId=64536807&sectionId=&storeId=19073&catalogId=10001&langId=-1&dropdown=course'
-__book_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/BNCBTBListView'
-__book_data__ = 'storeId=19073&catalogId=10001&langId=-1&viewName=TBWizardView&mcEnabled=N&showCampus=false&campus1=17548069&firstTermName_17548069=SPRING+2015&firstTermId_17548069=64536529'
 
-__book_data2__ = {
+__store_id__ = '19073'
+__base_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/TBWizardView?catalogId=10001&langId=-1&storeId=19073'
+__req_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/TextBookProcessDropdownsCmd?campusId=17548069&termId=64536529&storeId=19073&catalogId=10001&langId=-1&dropdown=term'
+__dept_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/TextBookProcessDropdownsCmd?campusId=17548069&termId=64536529&storeId=19073&catalogId=10001&langId=-1&dropdown=dept'
+__class_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/TextBookProcessDropdownsCmd?campusId=17548069&termId=64536529&storeId=19073&catalogId=10001&langId=-1&dropdown=course'
+__book_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/BNCBTBListView'
+__book_data__ = {
     "storeId": "19073",
     "catalogId": "10001",
     "langId": "-1",
@@ -40,14 +40,14 @@ from pymongo import MongoClient
 
 
 headers = {'content-type': 'application/json'}
-conn = urllib3.PoolManager() # TODO: migrate to requests
-client = MongoClient()
-db = client.test
+conn = urllib3.PoolManager()  # TODO: migrate to requests
+#client = MongoClient()
+#db = client.test
 
 
 def main():
     # Have to get cookies so we look legit
-    r = conn.urlopen('GET', __base_url__) # TODO: migrate to requests
+    r = conn.urlopen('GET', __base_url__)  # TODO: migrate to requests
     print('HDR:', r.headers)
     print('DATA:', r.data)
     cookie = http.cookies.SimpleCookie(r.headers['set-cookie'])
@@ -60,7 +60,7 @@ def main():
 
 
 def renewCookie():
-    r = conn.urlopen('GET', __base_url__) # TODO: migrate to requests
+    r = conn.urlopen('GET', __base_url__)  # TODO: migrate to requests
     cookie = http.cookies.SimpleCookie(r.headers['set-cookie'])
     headers['Cookie'] = cookie.output(attrs=[], header='').strip()
 
@@ -68,7 +68,7 @@ def renewCookie():
 def scrape_dept(dept):
     renewCookie() # Do this periodically so we don't get rate limited
     url = __dept_url__ + '&deptId=' + dept['categoryId']
-    r = conn.urlopen('GET', url, headers=headers) # TODO: migrate to requests
+    r = conn.urlopen('GET', url, headers=headers)  # TODO: migrate to requests
     print("New dept!", dept['categoryName'])
     try:
         data = json.loads(r.data.decode("utf-8"))
@@ -85,7 +85,7 @@ def scrape_dept(dept):
 
 def scrape_class(cl, dept):
     url = __class_url__ + '&courseId=' + cl['categoryId']
-    r = conn.urlopen('GET', url, headers=headers) # TODO: migrate to requests
+    r = conn.urlopen('GET', url, headers=headers)  # TODO: migrate to requests
     try:
         data = json.loads(r.data.decode("utf-8"))
         for section in data:
@@ -100,13 +100,13 @@ def scrape_class(cl, dept):
 
 def scrape_section(section, cl, dept):
     url = __book_url__
-    urldata = __book_data2__
+    urldata = __book_data__
     urldata.update({'section_1': section['categoryId']})
-    myheaders = headers.copy()
-    myheaders['content-type'] = 'application/x-www-form-urlencoded'
+    tmp_headers = headers.copy()
+    tmp_headers['content-type'] = 'application/x-www-form-urlencoded'
     try:
-        r = requests.post(url, data=urldata, headers=myheaders, timeout=10)
-        extractPrices(r.text, section, cl, dept)
+        r = requests.post(url, data=urldata, headers=tmp_headers, timeout=10)
+        extract_prices(r.text, section, cl, dept)
     except:
         print("Oh noes!")
         renewCookie()
@@ -114,9 +114,21 @@ def scrape_section(section, cl, dept):
         pass
 
 
-def extractPrices(html, section, cl, dept):
+def extract_prices(html, section, cl, dept):
     print(grep(html, "bookPrice"))
-    print(re.finditer("span class=\"bookPrice\" title=\"(.*?)\"", html))
+    #print(re.finditer("span class=\"bookPrice\" title=\"(.*?)\"", html)[0])
+    book = {
+        'Department': dept['categoryName'],
+        'Class': cl['categoryName'],
+        'Section': section['categoryName'],
+        'Price': {
+            'RentUsed': '',
+            'RentNew': '',
+            'BuyUsed': '',
+            'BuyNew': ''
+        }
+    }
+    print(json.dumps(book))
 
 
 def grep(s, pattern):
