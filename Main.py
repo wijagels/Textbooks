@@ -36,7 +36,7 @@ import json
 import http.cookies
 import re
 import requests
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, Tag
 from pymongo import MongoClient
 
 
@@ -75,7 +75,7 @@ def scrape_dept(dept):
         data = json.loads(r.data.decode("utf-8"))
         for cl in data:
             scrape_class(cl, dept)
-    except:
+    except ReferenceError:
         print(headers)
         print(r.data)
         print("Damnit, something broke again")
@@ -91,7 +91,7 @@ def scrape_class(cl, dept):
         data = json.loads(r.data.decode("utf-8"))
         for section in data:
             scrape_section(section, cl, dept)
-    except:
+    except ReferenceError:
         print(r.data)
         print("Shit, something bad happened")
         renew_cookie()
@@ -101,14 +101,14 @@ def scrape_class(cl, dept):
 
 def scrape_section(section, cl, dept):
     url = __book_url__
-    urldata = __book_data__
-    urldata.update({'section_1': section['categoryId']})
+    url_data = __book_data__
+    url_data.update({'section_1': section['categoryId']})
     tmp_headers = headers.copy()
     tmp_headers['content-type'] = 'application/x-www-form-urlencoded'
     try:
-        r = requests.post(url, data=urldata, headers=tmp_headers, timeout=10)
+        r = requests.post(url, data=url_data, headers=tmp_headers, timeout=10)
         extract_prices(r.text, section, cl, dept)
-    except:
+    except ReferenceError:
         print("Oh noes!")
         renew_cookie()
         scrape_section(section, cl, dept)
@@ -119,22 +119,37 @@ def extract_prices(html, section, cl, dept):
     # print(grep(html, "bookPrice"))
     # print(re.finditer("span class=\"bookPrice\" title=\"(.*?)\"", html)[0])
     soup = BeautifulSoup(html)
+    ru = rn = bu = bn = ''
     for el in soup.find_all("div", class_='book_details'):
+        assert isinstance(el, Tag)
         li = el.find_all("li", class_='selectableBook')
-        # print(li)
+        required = el.find('input', type='hidden')
+        ir = False
+        if required['value'] == '1':
+            ir = True
+        print(ir)
         for price in li:
-            if price.string == "BUY USED":
-                print("hey sup")
-            price = li[0].find("span", class_='bookPrice')[0]['title']
+            assert isinstance(price, Tag)
+            # print(price)
+            type_price = price['title']
+            if type_price == 'RENT USED':
+                ru = price.find("span", class_='bookPrice')['title']
+            elif type_price == 'RENT NEW':
+                rn = price.find("span", class_='bookPrice')['title']
+            elif type_price == 'BUY USED':
+                bu = price.find("span", class_='bookPrice')['title']
+            elif type_price == 'BUY NEW':
+                bn = price.find("span", class_='bookPrice')['title']
     book = {
         'Department': dept['categoryName'],
         'Class': cl['categoryName'],
         'Section': section['categoryName'],
+        'isRequired': ir,
         'Price': {
-            'RentUsed': price,
-            'RentNew': '',
-            'BuyUsed': '',
-            'BuyNew': ''
+            'RentUsed': ru,
+            'RentNew': rn,
+            'BuyUsed': bu,
+            'BuyNew': bn
         }
     }
     print(json.dumps(book))
