@@ -77,8 +77,6 @@ def scrape_dept(dept):
         for cl in data:
             scrape_class(cl, dept)
     except:
-        print(headers)
-        print(r.data)
         print("Damnit, something broke again")
         renew_cookie()
         scrape_dept(dept)
@@ -86,14 +84,13 @@ def scrape_dept(dept):
 
 
 def scrape_class(cl, dept):
-    url = __class_url__ + '&courseId=' + cl['categoryId']
     try:
+        url = __class_url__ + '&courseId=' + cl['categoryId']
         r = conn.urlopen('GET', url, headers=headers, timeout=3)  # TODO: migrate to requests
         data = json.loads(r.data.decode("utf-8"))
         for section in data:
             scrape_section(section, cl, dept)
     except:
-        print(r.data)
         print("Shit, something bad happened")
         renew_cookie()
         scrape_class(cl, dept)
@@ -101,12 +98,12 @@ def scrape_class(cl, dept):
 
 
 def scrape_section(section, cl, dept):
-    url = __book_url__
-    url_data = __book_data__
-    url_data.update({'section_1': section['categoryId']})
-    tmp_headers = headers.copy()
-    tmp_headers['content-type'] = 'application/x-www-form-urlencoded'
     try:
+        url = __book_url__
+        url_data = __book_data__
+        url_data.update({'section_1': section['categoryId']})
+        tmp_headers = headers.copy()
+        tmp_headers['content-type'] = 'application/x-www-form-urlencoded'
         r = requests.post(url, data=url_data, headers=tmp_headers, timeout=3)
         extract_prices(r.text, section, cl, dept)
     except:
@@ -159,7 +156,6 @@ def grep(s, pattern):
 
 
 def add_book(book):
-    print(db.test.find(book).count())
     if db.test.find(book).count() == 0:
         print("Inserting " + json.dumps(book))
         db.test.insert(book)
