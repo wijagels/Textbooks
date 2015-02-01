@@ -159,7 +159,8 @@ def grep(s, pattern):
 
 
 def add_book(book):
-    if db.test.find(book) == []:
+    print(db.test.find(book).cound())
+    if db.test.find(book).count() is 0:
         print("Inserting " + json.dumps(book))
         db.test.insert(book)
     else:
