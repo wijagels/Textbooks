@@ -38,16 +38,11 @@ import re
 import requests
 from bs4 import BeautifulSoup, Tag
 from pymongo import MongoClient
-from pymongo.database import Database
 
 
 headers = {'content-type': 'application/json'}
 conn = urllib3.PoolManager()  # TODO: migrate to requests
-client = MongoClient()
-global books
-books = client.test
-assert isinstance(books, Database)
-print(books)
+
 
 
 def main():
@@ -56,27 +51,32 @@ def main():
     cookie = http.cookies.SimpleCookie(r.headers['set-cookie'])
     headers['Cookie'] = cookie.output(attrs=[], header='').strip()
     headers['User-Agent'] = 'Mozilla/5.0 (Windows NT 6.3; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/41.0.2272.35 Safari/537.36'
-    r = conn.urlopen('GET', __req_url__, headers=headers)  # TODO: migrate to requests
+    r = conn.urlopen('GET', __req_url__, headers=headers, timeout=3)  # TODO: migrate to requests
     for dept in json.loads(r.data.decode("utf-8")):
         scrape_dept(dept)
 
 
 def renew_cookie():
-    r = conn.urlopen('GET', __base_url__)  # TODO: migrate to requests
-    cookie = http.cookies.SimpleCookie(r.headers['set-cookie'])
-    headers['Cookie'] = cookie.output(attrs=[], header='').strip()
+    try:
+        r = conn.urlopen('GET', __base_url__, timeout=3)  # TODO: migrate to requests
+        cookie = http.cookies.SimpleCookie(r.headers['set-cookie'])
+        headers['Cookie'] = cookie.output(attrs=[], header='').strip()
+    except:
+        print("Renew cookie failed")
+        renew_cookie()
+        pass
 
 
 def scrape_dept(dept):
     renew_cookie()  # Do this periodically so we don't get rate limited
     url = __dept_url__ + '&deptId=' + dept['categoryId']
-    r = conn.urlopen('GET', url, headers=headers)  # TODO: migrate to requests
+    r = conn.urlopen('GET', url, headers=headers, timeout=3)  # TODO: migrate to requests
     print("New dept!", dept['categoryName'])
     try:
         data = json.loads(r.data.decode("utf-8"))
         for cl in data:
             scrape_class(cl, dept)
-    except AssertionError:
+    except:
         print(headers)
         print(r.data)
         print("Damnit, something broke again")
@@ -87,12 +87,12 @@ def scrape_dept(dept):
 
 def scrape_class(cl, dept):
     url = __class_url__ + '&courseId=' + cl['categoryId']
-    r = conn.urlopen('GET', url, headers=headers)  # TODO: migrate to requests
+    r = conn.urlopen('GET', url, headers=headers, timeout=3)  # TODO: migrate to requests
     try:
         data = json.loads(r.data.decode("utf-8"))
         for section in data:
             scrape_section(section, cl, dept)
-    except AssertionError:
+    except:
         print(r.data)
         print("Shit, something bad happened")
         renew_cookie()
@@ -109,7 +109,7 @@ def scrape_section(section, cl, dept):
     try:
         r = requests.post(url, data=url_data, headers=tmp_headers, timeout=3)
         extract_prices(r.text, section, cl, dept)
-    except AssertionError:
+    except:
         print("Oh noes!")
         renew_cookie()
         scrape_section(section, cl, dept)
@@ -145,13 +145,12 @@ def extract_prices(html, section, cl, dept):
                 'Section': section['categoryName'],
                 'isRequired': ir,
                 'Price': {
-                    'RentUsed': ru,
-                    'RentNew': rn,
-                    'BuyUsed': bu,
-                    'BuyNew': bn
+                    'RentUsed': ru.strip('$'),
+                    'RentNew': rn.strip('$'),
+                    'BuyUsed': bu.strip('$'),
+                    'BuyNew': bn.strip('$')
                 }
             }
-            print(json.dumps(book))
             add_book(book)
 
 
@@ -160,8 +159,14 @@ def grep(s, pattern):
 
 
 def add_book(book):
-    global books
-    books.insert(book)
+    if db.test.find(book) == []:
+        print("Inserting " + json.dumps(book))
+        db.test.insert(book)
+    else:
+        print("Skipping " + json.dumps(book))
 
 
+client = MongoClient()
+db = client.test
+print(db)
 main()
