@@ -70,9 +70,9 @@ def renew_cookie():
 def scrape_dept(dept):
     renew_cookie()  # Do this periodically so we don't get rate limited
     url = __dept_url__ + '&deptId=' + dept['categoryId']
-    r = conn.urlopen('GET', url, headers=headers, timeout=3)  # TODO: migrate to requests
-    print("New dept!", dept['categoryName'])
     try:
+        r = conn.urlopen('GET', url, headers=headers, timeout=3)  # TODO: migrate to requests
+        print("New dept!", dept['categoryName'])
         data = json.loads(r.data.decode("utf-8"))
         for cl in data:
             scrape_class(cl, dept)
@@ -87,8 +87,8 @@ def scrape_dept(dept):
 
 def scrape_class(cl, dept):
     url = __class_url__ + '&courseId=' + cl['categoryId']
-    r = conn.urlopen('GET', url, headers=headers, timeout=3)  # TODO: migrate to requests
     try:
+        r = conn.urlopen('GET', url, headers=headers, timeout=3)  # TODO: migrate to requests
         data = json.loads(r.data.decode("utf-8"))
         for section in data:
             scrape_section(section, cl, dept)
