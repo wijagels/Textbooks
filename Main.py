@@ -129,14 +129,17 @@ def extract_prices(html, section, cl, dept):
         for price in li:
             assert isinstance(price, Tag)
             type_price = price['title']
-            if type_price == 'RENT USED':
-                ru = price.find("span", class_='bookPrice')['title']
-            elif type_price == 'RENT NEW':
-                rn = price.find("span", class_='bookPrice')['title']
-            elif type_price == 'BUY USED ':  # The idiots who designed the site put trailing spaces in these...
-                bu = price.find("span", class_='bookPrice')['title']
-            elif type_price == 'BUY NEW ':
-                bn = price.find("span", class_='bookPrice')['title']
+            try:
+                if type_price == 'RENT USED':
+                    ru = price.find("span", class_='bookPrice')['title']
+                elif type_price == 'RENT NEW':
+                    rn = price.find("span", class_='bookPrice')['title']
+                elif type_price == 'BUY USED ':  # The idiots who designed the site put trailing spaces in these...
+                    bu = price.find("span", class_='bookPrice')['title']
+                elif type_price == 'BUY NEW ':
+                    bn = price.find("span", class_='bookPrice')['title']
+            except KeyError:
+                pass
             title = price.find('a', class_="clr121")['title']
         if book_list.__len__() > 0:
             book = {
