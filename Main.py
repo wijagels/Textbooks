@@ -2,11 +2,13 @@ __author__ = 'William Jagels'
 
 
 __store_id__ = '19073'
-__base_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/TBWizardView?catalogId=10001&langId=-1&storeId=19073'
-__req_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/TextBookProcessDropdownsCmd?campusId=17548069&termId=64536529&storeId=19073&catalogId=10001&langId=-1&dropdown=term'
-__dept_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/TextBookProcessDropdownsCmd?campusId=17548069&termId=64536529&storeId=19073&catalogId=10001&langId=-1&dropdown=dept'
-__class_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/TextBookProcessDropdownsCmd?campusId=17548069&termId=64536529&storeId=19073&catalogId=10001&langId=-1&dropdown=course'
-__book_url__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/BNCBTBListView'
+__servlet__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/'
+__base_url__ = __servlet__ + 'TBWizardView?catalogId=10001&langId=-1&storeId=' + __store_id__
+__api_base__ = __servlet__ + 'TextBookProcessDropdownsCmd?campusId=17548069&termId=64536529&catalogId=10001&langId=-1&storeId=' + __store_id__
+__req_url__ = __api_base__ + '&dropdown=term'
+__dept_url__ = __api_base__ + '&dropdown=dept'
+__class_url__ = __api_base__ + '&dropdown=course'
+__book_url__ = __servlet__ + 'BNCBTBListView'
 __book_data__ = {
     "storeId": "19073",
     "catalogId": "10001",
@@ -147,7 +149,7 @@ def extract_prices(html, section, cl, dept):
                     'BuyUsed': bu.strip('$'),
                     'BuyNew': bn.strip('$')
                 }
-            }
+            }  # TODO add a unique identifier
             add_book(book)
 
 
