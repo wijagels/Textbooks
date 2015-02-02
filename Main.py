@@ -87,7 +87,7 @@ def scrape_dept(dept):
             scrape_class(cl, dept)
     except:
         print("Damnit, something broke again")
-        traceback.print_exc()
+        # traceback.print_exc()
         renew_cookie()
         scrape_dept(dept)
         pass
@@ -101,7 +101,7 @@ def scrape_class(cl, dept):
         for section in data:
             scrape_section(section, cl, dept)
     except:
-        traceback.print_exc()
+        # traceback.print_exc()
         print("Shit, something bad happened")
         renew_cookie()
         scrape_class(cl, dept)
@@ -118,7 +118,7 @@ def scrape_section(section, cl, dept):
         r = requests.post(url, data=url_data, headers=tmp_headers, timeout=3)
         extract_prices(r.text, section, cl, dept)
     except:
-        traceback.print_exc()
+        # traceback.print_exc()
         print("Oh noes!")
         renew_cookie()
         scrape_section(section, cl, dept)
@@ -158,12 +158,10 @@ def extract_prices(html, section, cl, dept):
                 'Class': cl['categoryName'],
                 'Section': section['categoryName'],
                 'isRequired': ir,
-                'Price': {
-                    'RentUsed': ru.strip('$'),
-                    'RentNew': rn.strip('$'),
-                    'BuyUsed': bu.strip('$'),
-                    'BuyNew': bn.strip('$')
-                }
+                'RentUsed': ru.strip('$'),
+                'RentNew': rn.strip('$'),
+                'BuyUsed': bu.strip('$'),
+                'BuyNew': bn.strip('$')
             }
             add_book(book)
 
