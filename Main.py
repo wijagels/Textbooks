@@ -69,6 +69,7 @@ def renew_cookie():
         headers['Cookie'] = cookie.output(attrs=[], header='').strip()
         failures = 0
     except:
+        failures += 1
         time.sleep(10 * failures)
         print("Renew cookie failed")
         renew_cookie()
