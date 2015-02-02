@@ -137,8 +137,10 @@ def extract_prices(html, section, cl, dept):
                 bu = price.find("span", class_='bookPrice')['title']
             elif type_price == 'BUY NEW ':
                 bn = price.find("span", class_='bookPrice')['title']
+            title = price.find('a', class_="clr121")['title']
         if book_list.__len__() > 0:
             book = {
+                'Title': title,
                 'Department': dept['categoryName'],
                 'Class': cl['categoryName'],
                 'Section': section['categoryName'],
@@ -149,7 +151,7 @@ def extract_prices(html, section, cl, dept):
                     'BuyUsed': bu.strip('$'),
                     'BuyNew': bn.strip('$')
                 }
-            }  # TODO add a unique identifier
+            }
             add_book(book)
 
 
