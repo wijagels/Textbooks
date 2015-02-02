@@ -39,12 +39,14 @@ import http.cookies
 import re
 import requests
 import traceback
+import time
 from bs4 import BeautifulSoup, Tag
 from pymongo import MongoClient
 
 
 headers = {'content-type': 'application/json'}
 conn = urllib3.PoolManager()  # TODO: migrate to requests
+failures = 0
 
 
 
@@ -60,12 +62,14 @@ def main():
 
 
 def renew_cookie():
+    global failures
     try:
         r = conn.urlopen('GET', __base_url__, timeout=3)  # TODO: migrate to requests
         cookie = http.cookies.SimpleCookie(r.headers['set-cookie'])
         headers['Cookie'] = cookie.output(attrs=[], header='').strip()
+        failures = 0
     except:
-        traceback.print_exc()
+        time.sleep(10 * failures)
         print("Renew cookie failed")
         renew_cookie()
         pass
