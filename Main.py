@@ -38,6 +38,7 @@ import json
 import http.cookies
 import re
 import requests
+import traceback
 from bs4 import BeautifulSoup, Tag
 from pymongo import MongoClient
 
@@ -64,6 +65,7 @@ def renew_cookie():
         cookie = http.cookies.SimpleCookie(r.headers['set-cookie'])
         headers['Cookie'] = cookie.output(attrs=[], header='').strip()
     except:
+        traceback.print_exc()
         print("Renew cookie failed")
         renew_cookie()
         pass
@@ -80,6 +82,7 @@ def scrape_dept(dept):
             scrape_class(cl, dept)
     except:
         print("Damnit, something broke again")
+        traceback.print_exc()
         renew_cookie()
         scrape_dept(dept)
         pass
@@ -93,6 +96,7 @@ def scrape_class(cl, dept):
         for section in data:
             scrape_section(section, cl, dept)
     except:
+        traceback.print_exc()
         print("Shit, something bad happened")
         renew_cookie()
         scrape_class(cl, dept)
@@ -109,6 +113,7 @@ def scrape_section(section, cl, dept):
         r = requests.post(url, data=url_data, headers=tmp_headers, timeout=3)
         extract_prices(r.text, section, cl, dept)
     except:
+        traceback.print_exc()
         print("Oh noes!")
         renew_cookie()
         scrape_section(section, cl, dept)
