@@ -2,7 +2,7 @@ __author__ = 'William Jagels'
 
 
 __store_id__ = '19073'
-__servlet__ = 'http://binghamton.bncollege.com/webapp/wcs/stores/servlet/'
+__servlet__ = 'http://american.bncollege.com/webapp/wcs/stores/servlet/'
 __base_url__ = __servlet__ + 'TBWizardView?catalogId=10001&langId=-1&storeId=' + __store_id__
 __api_base__ = __servlet__ + 'TextBookProcessDropdownsCmd?campusId=17548069&termId=64536529&catalogId=10001&langId=-1&storeId=' + __store_id__
 __req_url__ = __api_base__ + '&dropdown=term'
@@ -158,12 +158,18 @@ def extract_prices(html, section, cl, dept):
                 'Class': cl['categoryName'],
                 'Section': section['categoryName'],
                 'isRequired': ir,
-                'RentUsed': ru.strip('$'),
-                'RentNew': rn.strip('$'),
-                'BuyUsed': bu.strip('$'),
-                'BuyNew': bn.strip('$')
+                'RentUsed': tof(ru),
+                'RentNew': tof(rn),
+                'BuyUsed': tof(bu),
+                'BuyNew': tof(bn)
             }
             add_book(book)
+
+
+def tof(str):
+    if(str is ''):
+        return ''
+    return float(str.strip('$'))
 
 
 def grep(s, pattern):
