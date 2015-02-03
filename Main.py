@@ -166,10 +166,10 @@ def extract_prices(html, section, cl, dept):
             add_book(book)
 
 
-def tof(str):
-    if(str is ''):
+def tof(num):
+    if num is '':
         return ''
-    return float(str.strip('$'))
+    return float(num.strip('$'))
 
 
 def grep(s, pattern):
